@@ -1,6 +1,6 @@
-class GameScene extends Phaser.Scene {
+class UrbanScene extends Phaser.Scene {
     constructor() {
-        super('GameScene');
+        super('UrbanScene');
         this.playerLane = 0; // 0=left, 1=right (changed from 3 lanes to 2)
         this.busLane = 0; // Bus starts in left lane
         this.lanes = [0, 1];
@@ -20,6 +20,11 @@ class GameScene extends Phaser.Scene {
         
         // Track player progress (0 = back, 1 = fully forward)
         this.playerProgress = 0;
+    }
+
+    init(data) {
+        // Receive elapsed time from previous scene
+        this.elapsedTime = data.elapsedTime || 0;
     }
 
     preload() {
@@ -43,8 +48,8 @@ class GameScene extends Phaser.Scene {
         // Player car
         this.player = this.createPlayerCar(this.lanePositions[this.playerLane], this.playerY);
         
-        // Instructions text - updated to include UP key instructions
-        this.add.text(centerX, 30, 'STUCK BEHIND THE BUS', {
+        // Urban environment title
+        this.add.text(centerX, 30, 'URBAN ENVIRONMENT', {
             fontFamily: 'Arial',
             fontSize: '24px',
             color: '#ffffff',
@@ -70,8 +75,8 @@ class GameScene extends Phaser.Scene {
             strokeThickness: 3
         });
         
-        // Score text (just for testing)
-        this.scoreText = this.add.text(16, 16, 'Time: 0', {
+        // Score text (continuing from city scene)
+        this.scoreText = this.add.text(16, 16, 'Time: ' + this.elapsedTime, {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#ffffff',
@@ -88,8 +93,7 @@ class GameScene extends Phaser.Scene {
             strokeThickness: 3
         });
         
-        // Simple timer for testing
-        this.elapsedTime = 0;
+        // Continue timer from where it left off
         this.timerEvent = this.time.addEvent({
             delay: 1000,
             callback: this.updateTimer,
@@ -156,33 +160,31 @@ class GameScene extends Phaser.Scene {
             { x: leftTopX, y: 0 }                 // Top left
         ];
         
-        // Create the grass areas first as triangular shapes (so road draws on top)
-        
-        // Left grass - triangle extending from screen left to road edge
-        const leftGrassPoints = [
+        // Left concrete - triangle extending from screen left to road edge
+        const leftConcretePoints = [
             { x: 0, y: height },             // Bottom left corner of screen
             { x: leftBottomX, y: height },    // Bottom left corner of road
             { x: leftTopX, y: 0 },            // Top left corner of road
             { x: 0, y: 0 }                    // Top left corner of screen
         ];
         
-        // Right grass - triangle extending from road edge to screen right
-        const rightGrassPoints = [
+        // Right concrete - triangle extending from road edge to screen right
+        const rightConcretePoints = [
             { x: rightBottomX, y: height },   // Bottom right corner of road
             { x: width, y: height },          // Bottom right corner of screen
             { x: width, y: 0 },               // Top right corner of screen
             { x: rightTopX, y: 0 }            // Top right corner of road
         ];
         
-        // Draw left grass
-        const leftGrassGraphics = this.add.graphics({ fillStyle: { color: 0x33aa33 } });
-        leftGrassGraphics.fillPoints(leftGrassPoints, true);
+        // Draw left concrete (gray instead of grass)
+        const leftConcreteGraphics = this.add.graphics({ fillStyle: { color: 0x888888 } });
+        leftConcreteGraphics.fillPoints(leftConcretePoints, true);
         
-        // Draw right grass
-        const rightGrassGraphics = this.add.graphics({ fillStyle: { color: 0x33aa33 } });
-        rightGrassGraphics.fillPoints(rightGrassPoints, true);
+        // Draw right concrete (gray instead of grass)
+        const rightConcreteGraphics = this.add.graphics({ fillStyle: { color: 0x888888 } });
+        rightConcreteGraphics.fillPoints(rightConcretePoints, true);
         
-        // Create the road (on top of grass)
+        // Create the road (on top of concrete)
         const roadGraphics = this.add.graphics({ fillStyle: { color: 0x444444 } });
         roadGraphics.fillPoints(roadPoints, true);
     }
@@ -273,7 +275,6 @@ class GameScene extends Phaser.Scene {
             segment.width = this.topWidth + (this.bottomWidth - this.topWidth) * progress;
             
             // Length grows with position on screen - always directly proportional to progress
-            // No separate length progress calculation needed - just use screen position
             segment.length = this.topLength + (this.bottomLength - this.topLength) * progress;
             
             // If segment is off the bottom of the screen, reset to the top
@@ -377,21 +378,10 @@ class GameScene extends Phaser.Scene {
     updateTimer() {
         this.elapsedTime++;
         this.scoreText.setText('Time: ' + this.elapsedTime);
-        
-        // After 60 seconds, transition to the urban scene
-        if (this.elapsedTime >= 60) {
-            // Create a transition effect
-            this.cameras.main.fade(1000, 0, 0, 0, false, function(camera, progress) {
-                if (progress === 1) {
-                    // When fade completes, start the urban scene and pass the elapsed time
-                    this.scene.start('UrbanScene', { elapsedTime: this.elapsedTime });
-                }
-            }.bind(this));
-        }
     }
     
     moveLeft() {
-        if (this.playerLane > 0) { // Now only 0 and 1 are valid
+        if (this.playerLane > 0) {
             this.playerLane--;
             this.updateLaneText();
             this.tweenCarToLane(this.player, this.playerLane);
@@ -401,7 +391,7 @@ class GameScene extends Phaser.Scene {
     }
     
     moveRight() {
-        if (this.playerLane < 1) { // Now only 0 and 1 are valid
+        if (this.playerLane < 1) {
             this.playerLane++;
             this.updateLaneText();
             this.tweenCarToLane(this.player, this.playerLane);
@@ -433,7 +423,7 @@ class GameScene extends Phaser.Scene {
     }
     
     updateLaneText() {
-        const laneNames = ['Left', 'Right']; // Changed to 2 lanes
+        const laneNames = ['Left', 'Right'];
         this.laneText.setText('Lane: ' + laneNames[this.playerLane]);
     }
     
@@ -446,18 +436,6 @@ class GameScene extends Phaser.Scene {
         });
     }
     
-    changeBusLane() {
-        const now = this.time.now;
-        if (now - this.lastBusMove > this.busMoveCooldown) {
-            // Random lane change (other than following player)
-            if (Phaser.Math.Between(0, 100) < 20) {
-                this.busLane = this.busLane === 0 ? 1 : 0; // Toggle lane
-                this.tweenCarToLane(this.bus, this.busLane);
-                this.lastBusMove = now;
-            }
-        }
-    }
-
     update() {
         const isBlockedByBus = this.playerLane === this.busLane;
         
@@ -507,14 +485,13 @@ class GameScene extends Phaser.Scene {
         if (this.playerY > this.maxPlayerY) this.playerY = this.maxPlayerY;
         
         // Calculate player progress percentage (0-1)
-        // Use Phaser.Math.Clamp to ensure progress is between 0 and 0.99
         this.playerProgress = Phaser.Math.Clamp(
             (this.maxPlayerY - this.playerY) / (this.maxPlayerY - this.minPlayerY),
             0,
             0.99
         );
         
-        // Update progress text (ensures it's always 0-99%)
+        // Update progress text
         const displayProgress = Math.max(0, Math.min(Math.floor(this.playerProgress * 100), 99));
         this.progressText.setText('Progress: ' + displayProgress + '%');
         
@@ -526,7 +503,7 @@ class GameScene extends Phaser.Scene {
         
         // Occasionally check if bus should change lanes
         // Higher chance of blocking as player progresses
-        if (Phaser.Math.Between(0, 1000) < (5 + this.playerProgress * 15)) {  // Increased from 10 to 15
+        if (Phaser.Math.Between(0, 1000) < (5 + this.playerProgress * 15)) {
             this.checkBusFollowPlayer();
         }
         
@@ -550,4 +527,4 @@ class GameScene extends Phaser.Scene {
     }
 }
 
-export default GameScene;
+export default UrbanScene;

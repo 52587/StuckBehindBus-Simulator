@@ -1,6 +1,7 @@
 import MenuScene from './scene/Menu/MenuScene.js';
 import GameScene from './scene/City/GameScene.js';
 import GameOverScene from './scene/Menu/GameOverScene.js';
+import UrbanScene from './scene/Urban/UrbanScene.js';
 
 // Game configuration
 const config = {
@@ -15,7 +16,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, GameOverScene],
+    scene: [MenuScene, GameScene, UrbanScene, GameOverScene],
     // Use proper renderer configuration instead
     render: {
         pixelArt: false,
