@@ -190,33 +190,19 @@ class RoadSceneBase extends Phaser.Scene {
     
     // Common vehicle creation methods
     createBus(x, y) {
-        const busGroup = this.add.container(x, y);
+        // Create a sprite using the Bus.PNG image
+        // Note: You must preload this in your scene's preload method with:
+        // this.load.image('bus', 'assets/Bus.PNG');
+        const bus = this.add.sprite(x, y, 'bus');
         
-        // Bus body
-        busGroup.add(
-            this.add.rectangle(0, 0, 120, 200, 0x3366dd)
-                .setStrokeStyle(3, 0x000000)
-        );
+        // Set appropriate scale if needed
+        // Adjust these values based on your actual image size
+        bus.setScale(0.5);
         
-        // Bus windows - created more efficiently
-        for (let i = 0; i < 4; i++) {
-            busGroup.add(
-                this.add.rectangle(0, -70 + i * 40, 80, 25, 0x88ccff)
-                    .setStrokeStyle(1, 0x000000)
-            );
-        }
+        // Make sure origin is centered for proper positioning
+        bus.setOrigin(0.5, 0.5);
         
-        // Bus lights
-        busGroup.add(this.add.rectangle(-40, 80, 15, 10, 0xffff00).setStrokeStyle(1, 0x000000));
-        busGroup.add(this.add.rectangle(40, 80, 15, 10, 0xffff00).setStrokeStyle(1, 0x000000));
-        
-        // Bus wheels
-        busGroup.add(this.add.circle(-40, 90, 20, 0x000000));
-        busGroup.add(this.add.circle(40, 90, 20, 0x000000));
-        busGroup.add(this.add.circle(-40, 90, 10, 0x888888));
-        busGroup.add(this.add.circle(40, 90, 10, 0x888888));
-        
-        return busGroup;
+        return bus;
     }
     
     createPlayerCar(x, y) {

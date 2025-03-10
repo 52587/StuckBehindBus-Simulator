@@ -23,7 +23,10 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        // No preloading needed for shapes
+        // Load the bus image
+        this.load.image('bus', 'assets/Bus.PNG');
+        // Load the car image
+        this.load.image('car', 'assets/Car.PNG');
     }
 
     create() {
@@ -305,73 +308,29 @@ class GameScene extends Phaser.Scene {
     }
     
     createBus(x, y) {
-        // Create a group for the bus and its parts
-        const busGroup = this.add.container(x, y);
+        // Create a sprite using the Bus.PNG image
+        const bus = this.add.sprite(x, y, 'bus');
         
-        // Bus body
-        const busBody = this.add.rectangle(0, 0, 120, 200, 0x3366dd)
-            .setStrokeStyle(3, 0x000000);
-        busGroup.add(busBody);
+        // Set scale to 1 for full-sized bus
+        bus.setScale(1);
         
-        // Bus windows (create multiple windows going up the bus)
-        for (let i = 0; i < 4; i++) {
-            const windowY = -70 + i * 40;
-            const busWindow = this.add.rectangle(0, windowY, 80, 25, 0x88ccff)
-                .setStrokeStyle(1, 0x000000);
-            busGroup.add(busWindow);
-        }
+        // Make sure origin is centered for proper positioning
+        bus.setOrigin(0.5, 0.5);
         
-        // Bus lights
-        const leftLight = this.add.rectangle(-40, 80, 15, 10, 0xffff00)
-            .setStrokeStyle(1, 0x000000);
-        const rightLight = this.add.rectangle(40, 80, 15, 10, 0xffff00)
-            .setStrokeStyle(1, 0x000000);
-        busGroup.add(leftLight);
-        busGroup.add(rightLight);
-        
-        // Bus wheels
-        const leftWheel = this.add.circle(-40, 90, 20, 0x000000);
-        const rightWheel = this.add.circle(40, 90, 20, 0x000000);
-        const leftWheelCap = this.add.circle(-40, 90, 10, 0x888888);
-        const rightWheelCap = this.add.circle(40, 90, 10, 0x888888);
-        busGroup.add(leftWheel);
-        busGroup.add(rightWheel);
-        busGroup.add(leftWheelCap);
-        busGroup.add(rightWheelCap);
-        
-        return busGroup;
+        return bus;
     }
     
     createPlayerCar(x, y) {
-        const carGroup = this.add.container(x, y);
+        // Create a sprite using the Car.PNG image
+        const car = this.add.sprite(x, y, 'car');
         
-        // Car body
-        const carBody = this.add.rectangle(0, 0, 80, 140, 0xdd3333)
-            .setStrokeStyle(2, 0x000000);
-        carGroup.add(carBody);
+        // Set scale to 1 for full-sized car (adjust if needed)
+        car.setScale(1);
         
-        // Windshield
-        const windshield = this.add.rectangle(0, -30, 70, 40, 0x88ccff)
-            .setStrokeStyle(1, 0x000000);
-        carGroup.add(windshield);
+        // Make sure origin is centered for proper positioning
+        car.setOrigin(0.5, 0.5);
         
-        // Car wheels
-        const leftWheel = this.add.circle(-35, 50, 15, 0x000000);
-        const rightWheel = this.add.circle(35, 50, 15, 0x000000);
-        const leftWheelCap = this.add.circle(-35, 50, 7, 0x888888);
-        const rightWheelCap = this.add.circle(35, 50, 7, 0x888888);
-        carGroup.add(leftWheel);
-        carGroup.add(rightWheel);
-        carGroup.add(leftWheelCap);
-        carGroup.add(rightWheelCap);
-        
-        // Headlights
-        const leftLight = this.add.circle(-25, 65, 8, 0xffffcc);
-        const rightLight = this.add.circle(25, 65, 8, 0xffffcc);
-        carGroup.add(leftLight);
-        carGroup.add(rightLight);
-        
-        return carGroup;
+        return car;
     }
     
     updateTimer() {
