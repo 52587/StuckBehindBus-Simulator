@@ -10,6 +10,7 @@
             padding: 0;
             background-color: #333;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -25,14 +26,43 @@
             display: block;
             margin: 0 auto;
         }
+        #debug-info {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #aaa;
+            max-width: 800px;
+        }
     </style>
 </head>
 <body>
     <div id="game-container">
         <div id="game"></div>
+        <div id="debug-info">Loading game...</div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
     <script type="module" src="src/main.js"></script>
+    <script>
+        // Display some debugging info to help troubleshoot asset loading
+        document.addEventListener('DOMContentLoaded', () => {
+            const debugElement = document.getElementById('debug-info');
+            debugElement.innerHTML = `
+                <p>Base URL: ${window.location.href}</p>
+                <p>Path: ${window.location.pathname}</p>
+                <p>If you're seeing this, check the browser console for asset loading errors.</p>
+            `;
+            
+            // Add console listener to show errors on screen
+            const originalError = console.error;
+            console.error = function() {
+                originalError.apply(console, arguments);
+                const errorMsg = Array.from(arguments).join(' ');
+                const errorP = document.createElement('p');
+                errorP.style.color = '#ff5555';
+                errorP.textContent = `Error: ${errorMsg}`;
+                debugElement.appendChild(errorP);
+            };
+        });
+    </script>
 </body>
 </html>
