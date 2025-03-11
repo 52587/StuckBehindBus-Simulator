@@ -28,10 +28,40 @@ class UrbanScene extends Phaser.Scene {
     }
 
     preload() {
-        // Load the bus image
-        this.load.image('bus', 'assets/Bus.PNG');
-        // Load the car image
-        this.load.image('car', 'assets/Car.PNG');
+        // Load the bus image with proper path for GitHub Pages
+        this.load.image('bus', './assets/Bus.PNG');
+        // Add error handling in case the asset doesn't load
+        this.load.once('loaderror', (file) => {
+            console.error('Error loading asset:', file.src);
+            // Create a fallback bus if image fails to load
+            this.load.on('complete', () => this.createFallbackAssets());
+        });
+        
+        // Load the car image with proper path for GitHub Pages
+        this.load.image('car', './assets/Car.PNG');
+    }
+    
+    // Create fallback shapes if images don't load
+    createFallbackAssets() {
+        // Create texture for bus if it failed to load
+        if (!this.textures.exists('bus')) {
+            const graphics = this.add.graphics();
+            graphics.fillStyle(0x3366dd);
+            graphics.fillRect(0, 0, 120, 200);
+            graphics.generateTexture('bus', 120, 200);
+            graphics.destroy();
+            console.warn('Created fallback texture for bus');
+        }
+        
+        // Create texture for car if it failed to load
+        if (!this.textures.exists('car')) {
+            const graphics = this.add.graphics();
+            graphics.fillStyle(0xdd3333);
+            graphics.fillRect(0, 0, 80, 140);
+            graphics.generateTexture('car', 80, 140);
+            graphics.destroy();
+            console.warn('Created fallback texture for car');
+        }
     }
 
     create() {
