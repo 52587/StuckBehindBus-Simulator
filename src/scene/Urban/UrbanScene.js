@@ -30,77 +30,41 @@ class UrbanScene extends Phaser.Scene {
     preload() {
         console.log("Loading assets in UrbanScene");
         
-        // Use pre-checked paths if available (from HTML pre-check)
+        // Use verified paths from HTML pre-check
         if (window.assetCheck && window.assetCheck.bus) {
             console.log(`Using verified path for bus: ${window.assetCheck.bus}`);
             this.load.image('bus', window.assetCheck.bus);
         } else {
-            // Try lowercase extension first, then fallback
-            this.load.image('bus', 'assets/bus.png').on('filecomplete', () => {
-                console.log('Loaded bus.png successfully');
-            }).on('loaderror', () => {
-                console.warn('Failed to load bus.png, trying Bus.png');
-                this.load.image('bus', 'assets/Bus.png').on('filecomplete', () => {
-                    console.log('Loaded Bus.png successfully');
-                }).on('loaderror', () => {
-                    console.error('All bus image loading attempts failed, creating fallback');
-                    this.createFallbackTexture('bus');
-                });
-            });
+            // Simple direct loading as fallback
+            this.load.image('bus', 'assets/bus.png');
         }
         
         if (window.assetCheck && window.assetCheck.car) {
             console.log(`Using verified path for car: ${window.assetCheck.car}`);
             this.load.image('car', window.assetCheck.car);
         } else {
-            // Try lowercase extension first, then fallback
-            this.load.image('car', 'assets/car.png').on('filecomplete', () => {
-                console.log('Loaded car.png successfully');
-            }).on('loaderror', () => {
-                console.warn('Failed to load car.png, trying Car.png');
-                this.load.image('car', 'assets/Car.png').on('filecomplete', () => {
-                    console.log('Loaded Car.png successfully');
-                }).on('loaderror', () => {
-                    console.error('All car image loading attempts failed, creating fallback');
-                    this.createFallbackTexture('car');
-                });
-            });
+            // Simple direct loading as fallback
+            this.load.image('car', 'assets/car.png');
         }
     }
     
+    // Keep fallback texture creation but simplify it
     createFallbackTexture(key) {
-        // This runs after the scene is created, so we can safely create graphics
-        this.load.once('complete', () => {
-            console.log(`Creating fallback for ${key}`);
-            const graphics = this.make.graphics({x: 0, y: 0, add: false});
-            
-            if (key === 'bus') {
-                graphics.fillStyle(0x3366dd);
-                graphics.fillRect(0, 0, 120, 200);
-                graphics.lineStyle(2, 0x000000);
-                graphics.strokeRect(0, 0, 120, 200);
-                
-                // Add windows to make it look more like a bus
-                graphics.fillStyle(0x88ccff);
-                for (let i = 0; i < 3; i++) {
-                    graphics.fillRect(20, 20 + i * 40, 80, 30);
-                }
-            } else if (key === 'car') {
-                graphics.fillStyle(0xdd3333);
-                graphics.fillRect(0, 0, 80, 140);
-                graphics.lineStyle(2, 0x000000);
-                graphics.strokeRect(0, 0, 80, 140);
-                
-                // Add windshield
-                graphics.fillStyle(0x88ccff);
-                graphics.fillRect(10, 20, 60, 30);
-            }
-            
-            // Create texture from graphics
-            graphics.generateTexture(key, graphics.width, graphics.height);
-            graphics.destroy();
-            console.warn(`Created fallback texture for ${key}`);
-        });
+        console.log(`Creating fallback for ${key}`);
+        const graphics = this.make.graphics({x: 0, y: 0, add: false});
+        
+        if (key === 'bus') {
+            graphics.fillStyle(0x3366dd);
+            graphics.fillRect(0, 0, 120, 200);
+            graphics.strokeRect(0, 0, 120, 200);
+        } else if (key === 'car') {
+            graphics.fillStyle(0xdd3333);
+            graphics.fillRect(0, 0, 80, 140);
+            graphics.strokeRect(0, 0, 80, 140);
+        }
+        
+        graphics.generateTexture(key, graphics.width, graphics.height);
+        graphics.destroy();
     }
 
     create() {
