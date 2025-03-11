@@ -23,108 +23,59 @@ class GameScene extends Phaser.Scene {
     }
 
     preload() {
-        console.log("Current base URL:", window.location.href);
-        console.log("Loading assets from GameScene");
+        console.log("Loading assets in GameScene");
         
-        // Try multiple possible paths for GitHub Pages compatibility
-        const possiblePaths = [
-            './assets/Bus.PNG', 
-            '/StuckBehindBus-Simulator/assets/Bus.PNG',
-            '../assets/Bus.PNG',
-            'assets/Bus.PNG'
-        ];
-        
-        // Try to load bus image from multiple possible paths
-        this.loadAssetWithFallbacks('bus', possiblePaths);
-        
-        // Try to load car image from multiple possible paths
-        const carPaths = [
-            './assets/Car.PNG', 
-            '/StuckBehindBus-Simulator/assets/Car.PNG',
-            '../assets/Car.PNG',
-            'assets/Car.PNG'
-        ];
-        this.loadAssetWithFallbacks('car', carPaths);
-    }
-    
-    // Helper method to try multiple paths
-    loadAssetWithFallbacks(key, paths) {
-        // Track whether the asset loaded successfully
-        let loaded = false;
-        
-        // Try loading from the first path
-        this.tryLoadAsset(key, paths[0]);
-        
-        // Set up a listener to try the next path if this one fails
-        this.load.once('filecomplete-image-' + key, () => {
-            console.log(`Successfully loaded ${key} from ${paths[0]}`);
-            loaded = true;
-        });
-        
-        // If the load fails, try the next path
-        this.load.once('loaderror', (fileObj) => {
-            if (fileObj.key === key && !loaded) {
-                console.warn(`Failed to load ${key} from ${paths[0]}, trying alternative paths`);
-                // Try remaining paths
-                this.tryRemainingPaths(key, paths.slice(1));
-            }
-        });
-    }
-    
-    tryRemainingPaths(key, remainingPaths) {
-        if (remainingPaths.length === 0) {
-            console.error(`Failed to load ${key} from all paths, creating fallback`);
-            this.createFallbackTexture(key);
-            return;
+        // Use pre-checked paths if available
+        if (window.assetCheck && window.assetCheck.bus) {
+            console.log(`Using verified path for bus: ${window.assetCheck.bus}`);
+            this.load.image('bus', window.assetCheck.bus);
+        } else {
+            // Create fallback texture directly
+            this.createFallbackTexture('bus');
         }
         
-        // Try the next path
-        const nextPath = remainingPaths[0];
-        console.log(`Trying to load ${key} from ${nextPath}`);
-        
-        this.tryLoadAsset(key, nextPath);
-        
-        // Set up listeners for success or failure
-        this.load.once('filecomplete-image-' + key, () => {
-            console.log(`Successfully loaded ${key} from ${nextPath}`);
-        });
-        
-        this.load.once('loaderror', (fileObj) => {
-            if (fileObj.key === key) {
-                // Try the next path
-                this.tryRemainingPaths(key, remainingPaths.slice(1));
-            }
-        });
-    }
-    
-    tryLoadAsset(key, path) {
-        try {
-            this.load.image(key, path);
-            this.load.start(); // Process the load queue
-        } catch (e) {
-            console.error(`Error loading ${key} from ${path}:`, e);
+        if (window.assetCheck && window.assetCheck.car) {
+            console.log(`Using verified path for car: ${window.assetCheck.car}`);
+            this.load.image('car', window.assetCheck.car);
+        } else {
+            // Create fallback texture directly
+            this.createFallbackTexture('car');
         }
     }
     
     createFallbackTexture(key) {
-        const graphics = this.add.graphics();
-        
-        if (key === 'bus') {
-            graphics.fillStyle(0x3366dd);
-            graphics.fillRect(0, 0, 120, 200);
-            graphics.lineStyle(2, 0x000000);
-            graphics.strokeRect(0, 0, 120, 200);
-            graphics.generateTexture('bus', 120, 200);
-        } else if (key === 'car') {
-            graphics.fillStyle(0xdd3333);
-            graphics.fillRect(0, 0, 80, 140);
-            graphics.lineStyle(2, 0x000000);
-            graphics.strokeRect(0, 0, 80, 140);
-            graphics.generateTexture('car', 80, 140);
-        }
-        
-        graphics.destroy();
-        console.warn(`Created fallback texture for ${key}`);
+        // This runs after the scene is created, so we can safely create graphics
+        this.load.once('complete', () => {
+            console.log(`Creating fallback for ${key}`);
+            const graphics = this.make.graphics({x: 0, y: 0, add: false});
+            
+            if (key === 'bus') {
+                graphics.fillStyle(0x3366dd);
+                graphics.fillRect(0, 0, 120, 200);
+                graphics.lineStyle(2, 0x000000);
+                graphics.strokeRect(0, 0, 120, 200);
+                
+                // Add windows to make it look more like a bus
+                graphics.fillStyle(0x88ccff);
+                for (let i = 0; i < 3; i++) {
+                    graphics.fillRect(20, 20 + i * 40, 80, 30);
+                }
+            } else if (key === 'car') {
+                graphics.fillStyle(0xdd3333);
+                graphics.fillRect(0, 0, 80, 140);
+                graphics.lineStyle(2, 0x000000);
+                graphics.strokeRect(0, 0, 80, 140);
+                
+                // Add windshield
+                graphics.fillStyle(0x88ccff);
+                graphics.fillRect(10, 20, 60, 30);
+            }
+            
+            // Create texture from graphics
+            graphics.generateTexture(key, graphics.width, graphics.height);
+            graphics.destroy();
+            console.warn(`Created fallback texture for ${key}`);
+        });
     }
 
     create() {

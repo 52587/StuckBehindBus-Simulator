@@ -41,28 +41,74 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
-    <script type="module" src="src/main.js"></script>
     <script>
-        // Display some debugging info to help troubleshoot asset loading
-        document.addEventListener('DOMContentLoaded', () => {
+        // Check if assets exist before loading the game
+        window.assetCheck = {};
+        
+        function checkAssets() {
+            // List of assets to check with lowercase variants
+            const assetList = [
+                { key: 'bus', paths: ['assets/Bus.PNG', 'assets/bus.png', 'assets/BUS.PNG'] },
+                { key: 'car', paths: ['assets/Car.PNG', 'assets/car.png', 'assets/CAR.PNG'] }
+            ];
+            
+            let loadedCount = 0;
             const debugElement = document.getElementById('debug-info');
+            
+            function updateDebug(message, isError = false) {
+                const p = document.createElement('p');
+                p.textContent = message;
+                if (isError) p.style.color = '#ff6666';
+                debugElement.appendChild(p);
+            }
+            
             debugElement.innerHTML = `
+                <p>Checking for assets...</p>
                 <p>Base URL: ${window.location.href}</p>
                 <p>Path: ${window.location.pathname}</p>
-                <p>If you're seeing this, check the browser console for asset loading errors.</p>
             `;
             
-            // Add console listener to show errors on screen
-            const originalError = console.error;
-            console.error = function() {
-                originalError.apply(console, arguments);
-                const errorMsg = Array.from(arguments).join(' ');
-                const errorP = document.createElement('p');
-                errorP.style.color = '#ff5555';
-                errorP.textContent = `Error: ${errorMsg}`;
-                debugElement.appendChild(errorP);
-            };
-        });
+            assetList.forEach(asset => {
+                asset.paths.forEach(path => {
+                    const img = new Image();
+                    img.onload = function() {
+                        updateDebug(`✅ Found: ${path}`);
+                        window.assetCheck[asset.key] = path;
+                        loadedCount++;
+                        if (loadedCount === assetList.length) {
+                            updateDebug('All required assets found! Loading game...');
+                            loadGame();
+                        }
+                    };
+                    
+                    img.onerror = function() {
+                        updateDebug(`❌ Not found: ${path}`, true);
+                        // Continue trying other paths
+                    };
+                    
+                    img.src = path;
+                });
+            });
+            
+            // If assets aren't found in 2 seconds, continue with fallbacks
+            setTimeout(() => {
+                if (loadedCount < assetList.length) {
+                    updateDebug('⚠️ Some assets not found. Continuing with fallbacks...', true);
+                    loadGame();
+                }
+            }, 2000);
+        }
+        
+        function loadGame() {
+            // Now load the game script
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = 'src/main.js';
+            document.body.appendChild(script);
+        }
+        
+        // Start the asset check
+        window.onload = checkAssets;
     </script>
 </body>
 </html>
