@@ -30,21 +30,41 @@ class UrbanScene extends Phaser.Scene {
     preload() {
         console.log("Loading assets in UrbanScene");
         
-        // Use pre-checked paths if available
+        // Use pre-checked paths if available (from HTML pre-check)
         if (window.assetCheck && window.assetCheck.bus) {
             console.log(`Using verified path for bus: ${window.assetCheck.bus}`);
             this.load.image('bus', window.assetCheck.bus);
         } else {
-            // Create fallback texture directly
-            this.createFallbackTexture('bus');
+            // Try lowercase extension first, then fallback
+            this.load.image('bus', 'assets/bus.png').on('filecomplete', () => {
+                console.log('Loaded bus.png successfully');
+            }).on('loaderror', () => {
+                console.warn('Failed to load bus.png, trying Bus.png');
+                this.load.image('bus', 'assets/Bus.png').on('filecomplete', () => {
+                    console.log('Loaded Bus.png successfully');
+                }).on('loaderror', () => {
+                    console.error('All bus image loading attempts failed, creating fallback');
+                    this.createFallbackTexture('bus');
+                });
+            });
         }
         
         if (window.assetCheck && window.assetCheck.car) {
             console.log(`Using verified path for car: ${window.assetCheck.car}`);
             this.load.image('car', window.assetCheck.car);
         } else {
-            // Create fallback texture directly
-            this.createFallbackTexture('car');
+            // Try lowercase extension first, then fallback
+            this.load.image('car', 'assets/car.png').on('filecomplete', () => {
+                console.log('Loaded car.png successfully');
+            }).on('loaderror', () => {
+                console.warn('Failed to load car.png, trying Car.png');
+                this.load.image('car', 'assets/Car.png').on('filecomplete', () => {
+                    console.log('Loaded Car.png successfully');
+                }).on('loaderror', () => {
+                    console.error('All car image loading attempts failed, creating fallback');
+                    this.createFallbackTexture('car');
+                });
+            });
         }
     }
     

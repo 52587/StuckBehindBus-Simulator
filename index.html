@@ -46,10 +46,10 @@
         window.assetCheck = {};
         
         function checkAssets() {
-            // List of assets to check with lowercase variants
+            // List of assets to check with lowercase variants FIRST
             const assetList = [
-                { key: 'bus', paths: ['assets/Bus.PNG', 'assets/bus.png', 'assets/BUS.PNG'] },
-                { key: 'car', paths: ['assets/Car.PNG', 'assets/car.png', 'assets/CAR.PNG'] }
+                { key: 'bus', paths: ['assets/bus.png', 'assets/Bus.png', 'assets/BUS.png', 'assets/Bus.PNG'] },
+                { key: 'car', paths: ['assets/car.png', 'assets/Car.png', 'assets/CAR.png', 'assets/Car.PNG'] }
             ];
             
             let loadedCount = 0;
