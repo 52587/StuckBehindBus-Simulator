@@ -46,6 +46,13 @@ class UrbanScene extends Phaser.Scene {
             // Simple direct loading as fallback
             this.load.image('car', 'assets/car.png');
         }
+        
+        // Load grass images (less common in urban areas but still used)
+        this.load.image('grassLeft', 'assets/GrassLeft.png');
+        this.load.image('grassRight', 'assets/GrassRight.png');
+        
+        // Load tree image for urban scene
+        this.load.image('tree', 'assets/Tree2.png');
     }
     
     // Keep fallback texture creation but simplify it
@@ -78,20 +85,25 @@ class UrbanScene extends Phaser.Scene {
         // Setup the animated center line
         this.setupAnimatedCenterLine(centerX, height);
         
+        // Initialize grass arrays (fewer grass in urban scene)
+        this.initializeGrassObjects();
+        
         // Bus in front of player
         this.bus = this.createBus(this.lanePositions[this.busLane], this.busY);
+        this.bus.setDepth(100); // High depth value
         
-        // Player car
+        // Player car - now with highest depth to appear on top
         this.player = this.createPlayerCar(this.lanePositions[this.playerLane], this.playerY);
+        this.player.setDepth(110); // Increased from 90 to appear above bus
         
-        // Urban environment title
+        // Urban environment title with high depth
         this.add.text(centerX, 30, 'URBAN ENVIRONMENT', {
             fontFamily: 'Arial',
             fontSize: '24px',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 4
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setDepth(200);
         
         this.add.text(centerX, 70, 'LEFT/RIGHT arrows to change lanes\nUP arrow to move forward\nSPACE for game over', {
             fontFamily: 'Arial',
@@ -100,34 +112,34 @@ class UrbanScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: 3,
             align: 'center'
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setDepth(200);
         
-        // Lane indicator
+        // Lane indicator with high depth
         this.laneText = this.add.text(16, 50, 'Lane: Left', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 3
-        });
+        }).setDepth(200);
         
-        // Score text (continuing from city scene)
+        // Score text (continuing from city scene) with high depth
         this.scoreText = this.add.text(16, 16, 'Time: ' + this.elapsedTime, {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 3
-        });
+        }).setDepth(200);
         
-        // Progress tracking text
+        // Progress tracking text with high depth
         this.progressText = this.add.text(16, 80, 'Progress: 0%', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 3
-        });
+        }).setDepth(200);
         
         // Continue timer from where it left off
         this.timerEvent = this.time.addEvent({
@@ -143,14 +155,14 @@ class UrbanScene extends Phaser.Scene {
         // Track if player is trying to move forward
         this.isAccelerating = false;
         
-        // Visual indicator for acceleration
+        // Visual indicator for acceleration with high depth
         this.accelerationIndicator = this.add.text(16, 110, 'Accelerating: No', {
             fontFamily: 'Arial',
             fontSize: '16px',
             color: '#ffffff',
             stroke: '#000000',
             strokeThickness: 3
-        });
+        }).setDepth(200);
         
         // Register one-time key handlers
         this.input.keyboard.on('keydown-LEFT', this.moveLeft, this);
@@ -428,11 +440,207 @@ class UrbanScene extends Phaser.Scene {
         });
     }
     
+    // Initialize the environmental objects (grass and trees)
+    initializeGrassObjects() {
+        // Define the object arrays
+        this.environmentalObjects = {
+            grass: { left: [], right: [] },
+            trees: { left: [], right: [] }
+        };
+        
+        // Road perspective values
+        this.roadWidth = 600;
+        this.roadFarWidth = 200;
+        const centerX = this.scale.width / 2;
+        
+        // Set up timer for grass spawning
+        this.time.addEvent({
+            delay: 600,
+            callback: () => this.spawnEnvironmentalObject('grass', {
+                maxCount: 20,
+                chancePercent: 40,
+                scale: 0.2,
+                sideOffset: 0,
+                spawnY: -20,
+                assetPrefix: 'grass'
+            }),
+            callbackScope: this,
+            loop: true
+        });
+        
+        // Set up timer for tree spawning
+        this.time.addEvent({
+            delay: 1500,
+            callback: () => this.spawnEnvironmentalObject('trees', {
+                maxCount: 10,
+                chancePercent: 30,
+                scale: 0.3,
+                sideOffset: 30, // Extra offset for tree size
+                spawnY: -50,
+                assetPrefix: 'tree'
+            }),
+            callbackScope: this,
+            loop: true
+        });
+    }
+    
+    // Generic method to spawn an environmental object (grass or trees)
+    spawnEnvironmentalObject(type, config) {
+        const centerX = this.scale.width / 2;
+        const minDistFromCenter = 150;
+        
+        // Handle left side
+        if (this.environmentalObjects[type].left.length < config.maxCount && 
+            Phaser.Math.Between(0, 100) < config.chancePercent) {
+            
+            // Calculate a random X position at least 200px left of center
+            const maxX = centerX - minDistFromCenter - config.sideOffset;
+            const spawnX = Phaser.Math.Between(20 + config.sideOffset, maxX);
+            
+            // Create sprite
+            const assetKey = type === 'grass' ? `${config.assetPrefix}Left` : config.assetPrefix;
+            const obj = this.add.sprite(spawnX, config.spawnY, assetKey);
+            obj.setScale(config.scale);
+            obj.setOrigin(0.5, 1);
+            obj.alpha = type === 'grass' ? 0.8 : 1;
+            obj.initialX = spawnX;
+            
+            // Store type for later reference
+            obj.objType = type;
+            
+            this.environmentalObjects[type].left.push(obj);
+        }
+        
+        // Handle right side
+        if (this.environmentalObjects[type].right.length < config.maxCount && 
+            Phaser.Math.Between(0, 100) < config.chancePercent) {
+            
+            // Calculate a random X position at least 200px right of center
+            const minX = centerX + minDistFromCenter + config.sideOffset;
+            const spawnX = Phaser.Math.Between(minX, this.scale.width - (20 + config.sideOffset));
+            
+            // Create sprite
+            const assetKey = type === 'grass' ? `${config.assetPrefix}Right` : config.assetPrefix;
+            const obj = this.add.sprite(spawnX, config.spawnY, assetKey);
+            obj.setScale(config.scale);
+            obj.setOrigin(0.5, 1);
+            obj.alpha = type === 'grass' ? 0.8 : 1;
+            obj.initialX = spawnX;
+            
+            // Store type for later reference
+            obj.objType = type;
+            
+            this.environmentalObjects[type].right.push(obj);
+        }
+    }
+    
+    // Generic method to update all environmental objects
+    updateEnvironmentalObjects() {
+        const height = this.scale.height;
+        const centerX = this.scale.width / 2;
+        
+        // Config for different object types
+        const config = {
+            grass: { 
+                minScale: 0.2, 
+                scaleGrowth: 0.8, 
+                perspectiveMultiplier: 2.0,
+                removeOffset: 50,
+                setDepth: true,
+                baseDepth: 10 // Low depth for grass - will appear behind
+            },
+            trees: { 
+                minScale: 0.3, 
+                scaleGrowth: 0.7, 
+                perspectiveMultiplier: 2.0,
+                removeOffset: 100,
+                setDepth: true,
+                baseDepth: 50 // Higher depth - will appear above grass
+            }
+        };
+        
+        // Process all object types
+        ['grass', 'trees'].forEach(type => {
+            // Process left side
+            for (let i = this.environmentalObjects[type].left.length - 1; i >= 0; i--) {
+                const obj = this.environmentalObjects[type].left[i];
+                
+                // Move down at a constant speed
+                obj.y += 0.5;
+                
+                // Calculate distance from top (0 at top, 1 at bottom)
+                const distFromTop = Math.min(obj.y / height, 1);
+                
+                // Scale based on y position
+                const scale = config[type].minScale + distFromTop * config[type].scaleGrowth;
+                obj.setScale(scale);
+                
+                // Calculate distance from center
+                const distanceFromCenter = centerX - obj.initialX;
+                
+                // Increase horizontal distance based on progress down screen
+                const horizontalDistance = distanceFromCenter * (1 + distFromTop * config[type].perspectiveMultiplier);
+                
+                // Set new X position
+                obj.x = centerX - horizontalDistance;
+                
+                // Set depth for trees to ensure proper layering
+                if (config[type].setDepth) {
+                    obj.setDepth(config[type].baseDepth + (obj.y / height * 10));
+                }
+                
+                // Remove if off screen
+                if (obj.y > height + config[type].removeOffset) {
+                    obj.destroy();
+                    this.environmentalObjects[type].left.splice(i, 1);
+                }
+            }
+            
+            // Process right side
+            for (let i = this.environmentalObjects[type].right.length - 1; i >= 0; i--) {
+                const obj = this.environmentalObjects[type].right[i];
+                
+                // Move down at a constant speed
+                obj.y += 0.5;
+                
+                // Calculate progress based on screen position
+                const distFromTop = Math.min(obj.y / height, 1);
+                
+                // Scale based on y position
+                const scale = config[type].minScale + distFromTop * config[type].scaleGrowth;
+                obj.setScale(scale);
+                
+                // Calculate distance from center
+                const distanceFromCenter = obj.initialX - centerX;
+                
+                // Increase horizontal distance based on progress
+                const horizontalDistance = distanceFromCenter * (1 + distFromTop * config[type].perspectiveMultiplier);
+                
+                // Set new X position
+                obj.x = centerX + horizontalDistance;
+                
+                // Set depth for trees to ensure proper layering
+                if (config[type].setDepth) {
+                    obj.setDepth(config[type].baseDepth + (obj.y / height * 10));
+                }
+                
+                // Remove if off screen
+                if (obj.y > height + config[type].removeOffset) {
+                    obj.destroy();
+                    this.environmentalObjects[type].right.splice(i, 1);
+                }
+            }
+        });
+    }
+
     update() {
         const isBlockedByBus = this.playerLane === this.busLane;
         
         // Update animated line segments
         this.updateLineSegments();
+        
+        // Update environmental objects (grass and trees)
+        this.updateEnvironmentalObjects();
         
         // Player creeps forward only when UP key is pressed and not blocked by bus
         if (this.isAccelerating && !isBlockedByBus) {
@@ -509,7 +717,7 @@ class UrbanScene extends Phaser.Scene {
                     color: '#ff0000',
                     stroke: '#000000',
                     strokeThickness: 4
-                }).setOrigin(0.5);
+                }).setOrigin(0.5).setDepth(200); // Set high depth for warning
             }
         } else if (this.warningText) {
             // Remove the warning if player changes lanes
