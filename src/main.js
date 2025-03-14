@@ -2,10 +2,11 @@ import MenuScene from './scene/Menu/MenuScene.js';
 import GameScene from './scene/City/GameScene.js';
 import GameOverScene from './scene/Menu/GameOverScene.js';
 import UrbanScene from './scene/Urban/UrbanScene.js';
+import AudioScene from './scene/Audio/AudioScene.js';
 
 // Game configuration
 const config = {
-    type: Phaser.AUTO, // Changed back to AUTO for better compatibility
+    type: Phaser.AUTO,
     width: 800,
     height: 600,
     backgroundColor: '#222233',
@@ -16,31 +17,38 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, UrbanScene, GameOverScene],
-    // Use proper renderer configuration instead
+    // Start with MenuScene first, then add AudioScene
+    scene: [MenuScene, AudioScene, GameScene, UrbanScene, GameOverScene],
     render: {
         pixelArt: false,
         antialias: true,
         antialiasGL: true,
         roundPixels: false
     },
-    // Move canvas settings here
-    canvasStyle: 'display: block; margin: 0 auto;'
+    canvasStyle: 'display: block; margin: 0 auto;',
+    audio: {
+        disableWebAudio: false,
+        noAudio: false
+    }
 };
 
 // Create the game instance
 const game = new Phaser.Game(config);
 
-// Add fix for willReadFrequently warning directly to the canvas after creation
+// Start the audio scene explicitly after game created
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait a short moment for Phaser to create its canvas
     setTimeout(() => {
-        // Find the canvas element created by Phaser
+        // Start audio scene manually
+        if (game.scene && game.scene.getScene('AudioScene')) {
+            console.log('Starting AudioScene manually');
+            game.scene.start('AudioScene');
+        }
+        
+        // Apply willReadFrequently fix
         const canvas = document.querySelector('canvas');
         if (canvas) {
-            // Set the willReadFrequently attribute using getContext options
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
             console.log('Applied willReadFrequently fix to canvas');
         }
-    }, 100);
+    }, 200);
 });

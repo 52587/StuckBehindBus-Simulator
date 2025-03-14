@@ -5,6 +5,9 @@ class GameOverScene extends Phaser.Scene {
 
     init(data) {
         this.score = data.score || 0;
+        
+        // Stop the engine sound when game over
+        this.game.events.emit('game_over');
     }
 
     preload() {

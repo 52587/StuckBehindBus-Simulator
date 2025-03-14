@@ -4,13 +4,21 @@ class MenuScene extends Phaser.Scene {
     }
 
     preload() {
-        // No need to preload external assets for geometric shapes
+        console.log('MenuScene preload started');
+        // No need to load audio here anymore
     }
 
     create() {
+        console.log('MenuScene create started');
         const { width, height } = this.scale;
         const centerX = width / 2;
         const centerY = height / 2;
+
+        // Make sure AudioScene is running
+        if (!this.scene.isActive('AudioScene')) {
+            console.log('Starting AudioScene from MenuScene');
+            this.scene.launch('AudioScene');
+        }
 
         // Create background using a rectangle
         const background = this.add.rectangle(centerX, centerY, width, height, 0x333344);
@@ -58,9 +66,23 @@ class MenuScene extends Phaser.Scene {
             startButton.fillColor = 0x4466aa;
         });
         
-        // Button click
+        // Button click - start audio and transition to game scene
         startButton.on('pointerdown', () => {
             startButton.fillColor = 0x335599;
+            
+            // Make sure AudioScene is running before emitting events
+            if (!this.scene.isActive('AudioScene')) {
+                this.scene.launch('AudioScene');
+                
+                // Give it a moment to initialize before sending events
+                this.time.delayedCall(100, () => {
+                    this.scene.get('AudioScene').events.emit('start_engine');
+                });
+            } else {
+                this.scene.get('AudioScene').events.emit('start_engine');
+            }
+            
+            // Transition to the game scene
             this.scene.start('GameScene');
         });
         
@@ -94,6 +116,8 @@ class MenuScene extends Phaser.Scene {
             fontSize: '12px',
             color: '#aaaaaa'
         }).setOrigin(1);
+
+        console.log('MenuScene creation complete');
     }
     
     createBusIcon(x, y) {
