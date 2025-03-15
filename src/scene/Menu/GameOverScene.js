@@ -6,7 +6,7 @@ class GameOverScene extends Phaser.Scene {
     init(data) {
         this.score = data.score || 0;
         
-        // Stop the engine sound when game over
+        // Stop background engine sound
         this.game.events.emit('game_over');
     }
 
@@ -111,8 +111,18 @@ class GameOverScene extends Phaser.Scene {
             menuButton.fillColor = 0x555566;
         });
         
-        // Button click handlers
+        // Button click handlers with engine sound control
         restartButton.on('pointerdown', () => {
+            // Restart engine sound for new game
+            if (!this.scene.isActive('AudioScene')) {
+                this.scene.launch('AudioScene');
+                this.time.delayedCall(100, () => {
+                    this.scene.get('AudioScene').events.emit('start_engine');
+                });
+            } else {
+                this.scene.get('AudioScene').events.emit('start_engine');
+            }
+            
             this.scene.start('GameScene');
         });
         

@@ -1,28 +1,29 @@
 class AudioScene extends Phaser.Scene {
     constructor() {
-        // Change to inactive by default - will be started manually
+        // Scene starts inactive and is launched by MenuScene
         super({ key: 'AudioScene', active: false });
         this.audioLoaded = false;
         this.audioPlaying = false;
+        this.baseVolume = 0.1;
+        this.accelerateVolume = 0.3; // Higher volume when accelerating
+        this.currentTween = null; // Track the current volume tween
+        this.transitionDuration = 300; // ms for volume transition
+        this.lastVolumeChangeTime = 0; // Track time of last volume change
+        this.volumeChangeDelay = 50; // Minimum ms between volume changes
     }
 
     preload() {
-        // Try loading the audio file but handle potential errors
+        // Load the engine sound with error handling
         try {
             this.load.audio('engineSound', 'assets/audio/EngineSoundLoop.wav');
             
-            // Add specific error handler for this audio file
             this.load.once('loaderror', (fileObj) => {
                 if (fileObj.key === 'engineSound') {
-                    console.warn('Engine sound file not found. Using silent placeholder.');
                     this.audioLoaded = false;
-                    
-                    // Create a short silent sound as fallback
                     this.createSilentSound('engineSound');
                 }
             });
             
-            // Set flag if loading succeeds
             this.load.once('filecomplete-audio-engineSound', () => {
                 this.audioLoaded = true;
             });
@@ -54,31 +55,32 @@ class AudioScene extends Phaser.Scene {
     }
 
     create() {
-        console.log('AudioScene created');
-        // Create engine sound but don't play it yet
+        // Create engine sound without autoplay
         try {
             this.engineSound = this.sound.add('engineSound', {
                 loop: true,
-                volume: 0.1
+                volume: this.baseVolume
             });
             
-            // Set up event listeners
+            // Set up event listeners for audio control
             this.events.on('start_engine', this.startEngineSound, this);
             this.events.on('stop_engine', this.stopEngineSound, this);
+            this.events.on('accelerate', this.increaseVolume, this);
+            this.events.on('decelerate', this.decreaseVolume, this);
             this.game.events.on('game_over', this.stopEngineSound, this);
             
-            console.log(this.audioLoaded ? 'Audio loaded and ready' : 'Silent placeholder ready');
         } catch (e) {
-            console.warn('Could not create engine sound:', e);
-            // Create a dummy object to prevent errors
+            // Create dummy object for error prevention
             this.engineSound = { 
                 play: () => {}, 
                 stop: () => {},
+                setVolume: () => {},
+                volume: this.baseVolume,
                 isPlaying: false
             };
         }
         
-        // After scene/game is loaded, unlock audio context when available
+        // Unlock audio context for browsers requiring user interaction
         this.unlockAudio();
     }
 
@@ -131,6 +133,12 @@ class AudioScene extends Phaser.Scene {
 
     stopEngineSound() {
         try {
+            // Stop any active volume tween first
+            if (this.currentTween) {
+                this.currentTween.stop();
+                this.currentTween = null;
+            }
+            
             if (this.engineSound && this.audioPlaying) {
                 this.engineSound.stop();
                 this.audioPlaying = false;
@@ -139,6 +147,62 @@ class AudioScene extends Phaser.Scene {
         } catch (e) {
             console.warn('Error stopping engine sound:', e);
         }
+    }
+
+    // New method for smooth volume transition
+    smoothVolumeTransition(targetVolume) {
+        // Don't change volume too frequently to prevent audio artifacts
+        const now = Date.now();
+        if (now - this.lastVolumeChangeTime < this.volumeChangeDelay) {
+            return;
+        }
+        this.lastVolumeChangeTime = now;
+        
+        try {
+            if (this.engineSound && this.audioPlaying) {
+                // Stop any existing volume tween
+                if (this.currentTween) {
+                    this.currentTween.stop();
+                }
+                
+                // Get current volume (or use base volume if not set)
+                const currentVolume = this.engineSound.volume !== undefined ? 
+                    this.engineSound.volume : this.baseVolume;
+                
+                // Only tween if there's a significant difference
+                if (Math.abs(currentVolume - targetVolume) > 0.01) {
+                    // Create a temporary object to tween
+                    const volumeObject = { volume: currentVolume };
+                    
+                    // Create new tween
+                    this.currentTween = this.tweens.add({
+                        targets: volumeObject,
+                        volume: targetVolume,
+                        duration: this.transitionDuration,
+                        ease: 'Sine.easeInOut',
+                        onUpdate: () => {
+                            if (this.engineSound && this.audioPlaying) {
+                                this.engineSound.setVolume(volumeObject.volume);
+                            }
+                        },
+                        onComplete: () => {
+                            this.currentTween = null;
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('Error changing sound volume:', e);
+        }
+    }
+
+    // Replace existing volume control methods with smooth transitions
+    increaseVolume() {
+        this.smoothVolumeTransition(this.accelerateVolume);
+    }
+
+    decreaseVolume() {
+        this.smoothVolumeTransition(this.baseVolume);
     }
 }
 

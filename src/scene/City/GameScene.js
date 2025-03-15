@@ -167,17 +167,27 @@ class GameScene extends Phaser.Scene {
             this.scene.start('GameOverScene', { score: this.elapsedTime });
         });
         
-        // UP key controls for acceleration
+        // UP key controls with engine sound volume adjustment
         this.input.keyboard.on('keydown-UP', () => {
             this.isAccelerating = true;
             this.accelerationIndicator.setText('Accelerating: Yes');
             this.accelerationIndicator.setColor('#00ff00');
+            
+            // Increase engine sound volume
+            if (this.scene.isActive('AudioScene')) {
+                this.scene.get('AudioScene').events.emit('accelerate');
+            }
         });
         
         this.input.keyboard.on('keyup-UP', () => {
             this.isAccelerating = false;
             this.accelerationIndicator.setText('Accelerating: No');
             this.accelerationIndicator.setColor('#ffffff');
+            
+            // Decrease engine sound volume
+            if (this.scene.isActive('AudioScene')) {
+                this.scene.get('AudioScene').events.emit('decelerate');
+            }
         });
         
         // Randomly change bus lane occasionally with delay
@@ -661,6 +671,9 @@ class GameScene extends Phaser.Scene {
         // Update environmental objects (grass and trees)
         this.updateEnvironmentalObjects();
         
+        // Manage engine sound volume based on actual movement, not just input
+        this.updateEngineSound(isBlockedByBus);
+        
         // Player creeps forward only when UP key is pressed and not blocked by bus
         if (this.isAccelerating && !isBlockedByBus) {
             if (this.playerY > this.minPlayerY) {
@@ -743,6 +756,26 @@ class GameScene extends Phaser.Scene {
             // Remove the warning if player changes lanes
             this.warningText.destroy();
             this.warningText = null;
+        }
+    }
+
+    // New method to update engine sound volume based on actual movement
+    updateEngineSound(isBlockedByBus) {
+        if (this.scene.isActive('AudioScene')) {
+            const audioScene = this.scene.get('AudioScene');
+            
+            // If accelerating but blocked, use normal volume
+            if (this.isAccelerating && isBlockedByBus) {
+                audioScene.events.emit('decelerate');
+            }
+            // If accelerating and not blocked, use higher volume
+            else if (this.isAccelerating && !isBlockedByBus) {
+                audioScene.events.emit('accelerate');
+            }
+            // Not accelerating, use normal volume
+            else {
+                audioScene.events.emit('decelerate');
+            }
         }
     }
 }

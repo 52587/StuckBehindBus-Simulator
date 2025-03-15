@@ -1,3 +1,20 @@
+/**
+ * Stuck Behind The Bus - Main Game Configuration
+ * 
+ * Major Phaser Components Used:
+ * 
+ * 1. Phaser.Game - Core game instance that manages the game loop, rendering, and scenes
+ * 2. Phaser.Scene - Scene management system (MenuScene, GameScene, UrbanScene, etc.)
+ * 3. Phaser.AUTO - Renderer that automatically chooses between WebGL and Canvas
+ * 4. Phaser.Physics.Arcade - Simple AABB physics for vehicle movement and collision detection
+ * 5. Phaser.Renderer - Graphics rendering with antialiasing and WebGL optimization
+ * 6. Phaser.Sound - Audio system for engine sound effects
+ * 7. Phaser.Input - Keyboard input handling for player controls
+ * 8. Phaser.Tweens - Animation system for smooth lane transitions
+ * 9. Phaser.GameObjects - Various game objects (Rectangle, Text, Sprite, Container)
+ * 10. Phaser.Time.TimerEvent - Time-based events for animations and game progression
+ */
+
 import MenuScene from './scene/Menu/MenuScene.js';
 import GameScene from './scene/City/GameScene.js';
 import GameOverScene from './scene/Menu/GameOverScene.js';
